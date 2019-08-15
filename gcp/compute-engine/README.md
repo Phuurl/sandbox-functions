@@ -15,3 +15,7 @@ Function is triggered from a Pub/Sub topic. This could then be published to by a
 ## IAM
 
 This Cloud Function has been tested using a service account with the `Compute Instance Admin (beta)` role
+
+## Configuration
+
+Debug logging can be enabled by adding a `LOG_LEVEL` environment variable to the Cloud Function with the value `debug`.
