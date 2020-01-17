@@ -3,16 +3,34 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   ec2-cleanup
 
-  Sample SAM Template for ec2-cleanup
+  Lambda deployment to automatically clean up EC2 resources
 
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
     Timeout: 5
 
+Parameters:
+  CronScheduleParameter:
+    Type: String
+    Default: cron(30 0 * * ? *)
+    Description: Enter the cron schedule for the CloudWatch Events trigger
+
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: ec2-cleanup
+    Description: Lambda to automatically terminate EC2 instances daily that aren't tagged with 'preserve'.
+    Author: Phuurl
+    SpdxLicenseId: MIT
+    LicenseUrl: LICENSE.txt
+    ReadmeUrl: README.md
+    Labels: ['ec2', 'sandbox', 'terminate', 'cleanup']
+    HomePageUrl: https://github.com/Phuurl/sandbox-functions
+    SemanticVersion: '1.1.0'
+    SourceCodeUrl: https://github.com/Phuurl/sandbox-functions
+
 Resources:
   EC2CleanupFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: ec2-cleanup/
       Handler: ec2-cleanup.lambda_handler
@@ -33,17 +51,15 @@ Resources:
             Resource: '*'
       Events:
         CleanupSchedule:
-          Type: Schedule # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Type: Schedule
           Properties:
-            Schedule: cron(30 0 * * ? *)
-            Name: daily-0030
-            Description: Runs daily at 0030 UTC
+            Schedule:
+              Ref: CronScheduleParameter
+            Name: cleanup-cron
+            Description: Cron trigger for ec2-cleanup
             Enabled: True
 
 Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   EC2CleanupFunction:
     Description: "Terminates all EC2s not tagged with 'preserve' in the region daily"
     Value: !GetAtt EC2CleanupFunction.Arn
