@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  ec2-cleanup
+
+  Sample SAM Template for ec2-cleanup
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 5
+
+Resources:
+  EC2CleanupFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: ec2-cleanup/
+      Handler: ec2-cleanup.lambda_handler
+      Runtime: python3.8
+      Policies:
+        - Statement:
+          - Sid: TerminateInstances
+            Effect: Allow
+            Action:
+              - ec2:TerminateInstances
+            Resource: 'arn:aws:ec2:*:*:instance/*'
+          - Sid: ListInstances
+            Effect: Allow
+            Action:
+              - ec2:DescribeInstances
+              - ec2:DescribeTags
+              - ec2:DescribeInstanceStatus
+            Resource: '*'
+      Events:
+        CleanupSchedule:
+          Type: Schedule # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Schedule: cron(30 0 * * ? *)
+            Name: daily-0030
+            Description: Runs daily at 0030 UTC
+            Enabled: True
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  EC2CleanupFunction:
+    Description: "Terminates all EC2s not tagged with 'preserve' in the region daily"
+    Value: !GetAtt EC2CleanupFunction.Arn
+  EC2CleanupFunctionIamRole:
+    Description: "Implicit IAM Role created for EC2 Cleanup function"
+    Value: !GetAtt EC2CleanupFunctionRole.Arn
